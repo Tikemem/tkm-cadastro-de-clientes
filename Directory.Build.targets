@@ -1,0 +1,58 @@
+<Project>
+  <!-- Bypass targets that require Visual Studio's Microsoft.Build.AppxPackage.dll / Pri.Tasks.dll -->
+  <Target Name="CopyLocalFilesOutputGroup" Returns="@(CopyLocalFilesOutputGroupOutput)">
+    <ItemGroup>
+      <CopyLocalFilesOutputGroupOutput Include="@(ReferenceCopyLocalPaths)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="GetMrtPackagingOutputs" Returns="@(PackagingOutputs)" />
+  <Target Name="_GetDefaultResourceLanguage" />
+  <Target Name="_GenerateProjectPriFile" />
+  <Target Name="AddPriPayloadFilesToCopyToOutputDirectoryItems" />
+
+  <!-- Generate resources.pri and copy manifest after build -->
+  <Target Name="GeneratePriFileDirectly" AfterTargets="Build">
+    <PropertyGroup>
+      <MakePriPath>C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\makepri.exe</MakePriPath>
+      <ObjDirClean>$(IntermediateOutputPath.TrimEnd('\'))</ObjDirClean>
+      <PriConfigPath>$(ObjDirClean)\priconfig.xml</PriConfigPath>
+      <TargetDirClean>$(TargetDir.TrimEnd('\'))</TargetDirClean>
+      <PriFile>$(TargetDirClean)\resources.pri</PriFile>
+      <PriFileBak>$(TargetDirClean)\resources.pri.bak</PriFileBak>
+    </PropertyGroup>
+    <!-- Se o aplicativo estiver aberto, move o resources.pri travado para .bak para que o makepri possa criar o novo sem erro de bloqueio -->
+    <Exec Command="cmd.exe /c &quot;if exist &quot;$(PriFileBak)&quot; del /f /q &quot;$(PriFileBak)&quot; 2&gt;nul &amp; if exist &quot;$(PriFile)&quot; move /y &quot;$(PriFile)&quot; &quot;$(PriFileBak)&quot; 2&gt;nul &amp; exit 0&quot;" ContinueOnError="true" />
+    <Exec Command="&quot;$(MakePriPath)&quot; createconfig /cf &quot;$(PriConfigPath)&quot; /dq pt-BR /pv 10.0.0 /o" />
+    <Exec Command="&quot;$(MakePriPath)&quot; new /pr &quot;$(ObjDirClean)&quot; /cf &quot;$(PriConfigPath)&quot; /of &quot;$(PriFile)&quot; /in $(AssemblyName) /o" />
+    <Copy SourceFiles="$(ObjDirClean)\Manifests\app.manifest" DestinationFiles="$(TargetDirClean)\$(AssemblyName).exe.manifest" Condition="Exists('$(ObjDirClean)\Manifests\app.manifest')" />
+  </Target>
+
+  <!-- Ensure .xbf files are copied to TargetDir after build so loose XAML resources can be loaded -->
+  <Target Name="CopyXbfToTargetDir" AfterTargets="Build">
+    <PropertyGroup>
+      <TargetDirClean>$(TargetDir.TrimEnd('\'))</TargetDirClean>
+      <ObjDirClean>$(IntermediateOutputPath.TrimEnd('\'))</ObjDirClean>
+    </PropertyGroup>
+    <ItemGroup>
+      <XbfFilesToTarget Include="$(ObjDirClean)\**\*.xbf" />
+    </ItemGroup>
+    <Copy SourceFiles="@(XbfFilesToTarget)" DestinationFiles="@(XbfFilesToTarget->'$(TargetDirClean)\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- Copy resources.pri, language pri files, xbf files and manifest to PublishDir after Publish -->
+  <Target Name="CopyPriToPublishDir" AfterTargets="Publish" Condition="'$(PublishDir)' != ''">
+    <PropertyGroup>
+      <TargetDirClean>$(TargetDir.TrimEnd('\'))</TargetDirClean>
+      <ObjDirClean>$(IntermediateOutputPath.TrimEnd('\'))</ObjDirClean>
+    </PropertyGroup>
+    <ItemGroup>
+      <PriFilesToPublish Include="$(TargetDirClean)\*.pri" />
+      <XbfFilesToPublish Include="$(ObjDirClean)\**\*.xbf" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PriFilesToPublish)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(XbfFilesToPublish)" DestinationFiles="@(XbfFilesToPublish->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(TargetDirClean)\$(AssemblyName).exe.manifest" DestinationFolder="$(PublishDir)" Condition="Exists('$(TargetDirClean)\$(AssemblyName).exe.manifest')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(ProjectDir)Assets\app.ico" DestinationFolder="$(PublishDir)Assets" Condition="Exists('$(ProjectDir)Assets\app.ico')" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

@@ -1,0 +1,57 @@
+## ==============================================================================
+##  .gitignore - TKM Cadastro de Cliente (WinUI 3 / .NET 8)
+## ==============================================================================
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.pri
+*.pri.bak
+*.xbf
+*.layout.resfiles
+
+# Visual Studio / IDE files
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+.vscode/
+
+# Package & Tool outputs
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Windows App SDK / WinAppSDK generated files
+Generated Files/
+BundleArtifacts/
+Package.StoreAssociation.xml
+_pkginfo.txt
+
+# Local Database & Secrets (Segurança & LGPD / GDPR)
+*.db
+*.db-shm
+*.db-wal
+*.db.bak
+clientes.db*
+app_debug.log
+client_secret*.json
+credentials.json
+token.json
+google_token/
+google_token\
+idioma.json
+config.json
+
+# Windows temporary files
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.tmp
+*.bak
